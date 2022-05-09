@@ -7,6 +7,8 @@ const libUtil  = require('/lib/util');
 
 const toStr = libUtil.toStr;
 
+const ALLTEXT_UPPERCASE_T = '_allText';
+const ALLTEXT_LOWERCASE_T = '_alltext';
 
 const REPO_ID_1 = `${app.name}.1`;
 const INDEX_CONFIG = {
@@ -43,7 +45,8 @@ const QUERY_PARAMS = {
 		postTag: '</b>',
 		preTag: '<b>',
 		properties: {
-			_allText: {},
+			//_allText: {}, // NOTICE: Uppercase T
+			_alltext: {}, // NOTICE: Lowercase T
 			data: {}
 		}//,
 		// requireFieldMatch can be set to false which will cause any property
@@ -54,7 +57,22 @@ const QUERY_PARAMS = {
 		//tagsSchema: 'styled' // Set to styled to use the built-in tag schema.
 	},
 	//query: "fulltext('data', 'dolor')"
-	query: "fulltext('_allText', 'dolor')"
+	//query: `fulltext('${ALLTEXT_UPPERCASE_T}', 'dolor')`
+	//query: `fulltext('${ALLTEXT_LOWERCASE_T}', 'dolor')`
+	query: {
+		boolean: {
+			must: [{
+				fulltext: {
+					fields: [
+						//ALLTEXT_UPPERCASE_T
+						ALLTEXT_LOWERCASE_T
+					],
+					query: 'dolor'//,
+					//operator: 'AND'
+				} // fulltext
+			}] // must
+		} // boolean
+	}, // query
 	//query: "fulltext('_allText', 'dolor') OR fulltext('data', 'dolor')"
 	//query: "ngram('_allText', 'dolor') OR ngram('data', 'dolor')"
 	//query: "fulltext('_allText', 'dolor~1') OR fulltext('data', 'dolor~1')"
