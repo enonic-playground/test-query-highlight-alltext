@@ -24,12 +24,27 @@ const INDEX_CONFIG = {
 			languages: []
 		},
 		path: 'data'
+	},{
+		config: {
+			decideByType: false,
+			enabled: true,
+			nGram: false,
+			fulltext: true,
+			includeInAllText: false,
+			path: false,
+			indexValueProcessors: [],
+			languages: [
+				'en'
+			]
+		},
+		path: 'deep.nested.path'
 	}], // configs
 	default: 'none'
 };
 log.info(`INDEX_CONFIG:${toStr(INDEX_CONFIG)}`);
 
 const LORUM = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
+const LORUM_ENGLISH = 'But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it is pain, but because occasionally circumstances occur in which toil and pain can procure him some great pleasure. To take a trivial example, which of us ever undertakes laborious physical exercise, except to obtain some advantage from it? But who has any right to find fault with a man who chooses to enjoy a pleasure that has no annoying consequences, or one who avoids a pain that produces no resultant pleasure?';
 
 const QUERY_PARAMS = {
 	//count: -1, // BUG Highlight doesn't work when count is -1
@@ -47,7 +62,8 @@ const QUERY_PARAMS = {
 		properties: {
 			//_allText: {}, // NOTICE: Uppercase T
 			_alltext: {}, // NOTICE: Lowercase T
-			data: {}
+			data: {},
+			'deep.nested.path': {}
 		}//,
 		// requireFieldMatch can be set to false which will cause any property
 		// to be highlighted regardless of whether its value matches the query.
@@ -61,16 +77,26 @@ const QUERY_PARAMS = {
 	//query: `fulltext('${ALLTEXT_LOWERCASE_T}', 'dolor')`
 	query: {
 		boolean: {
-			must: [{
-				fulltext: {
+			//must: [{
+			should: [{ // Highlight works for should on _alltext
+				//fulltext: {
+				stemmed: { // Highlight works
 					fields: [
 						//ALLTEXT_UPPERCASE_T
-						ALLTEXT_LOWERCASE_T
+						//ALLTEXT_LOWERCASE_T // Highlight works
+						//'deep.nested.path' // Highlight works
+						//'*' // Even this works
+						'deep.*.path' // Highlight works
+						//'deep.*' // Highlight works
+						//'*.path' // Highlight works
+						//'*.nested.*'  // Highlight works
 					],
-					query: 'dolor'//,
+					//query: 'dolor'//,
+					query: 'ideas', // Highlight works with stemming
 					//operator: 'AND'
+					language: 'en'
 				} // fulltext
-			}] // must
+			}] // must/should
 		} // boolean
 	}, // query
 	//query: "fulltext('_allText', 'dolor') OR fulltext('data', 'dolor')"
@@ -115,7 +141,12 @@ function task() {
 			_indexConfig: INDEX_CONFIG,
 			_name: '1',
 			//_path: '/',
-			data: LORUM
+			data: LORUM,
+			deep: {
+				nested: {
+					path: LORUM_ENGLISH
+				}
+			}
 		};
 		log.debug(`createNodeParams1:${toStr(createNodeParams1)}`);
 		try {
@@ -136,7 +167,8 @@ function task() {
 				highlight: hit.highlight,
 				id: hit.id,
 				node: {
-					data: node.data
+					data: node.data,
+					nested: node.nested
 				},
 				score: hit.score
 			};
